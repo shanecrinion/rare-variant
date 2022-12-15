@@ -42,7 +42,25 @@ ukb_evening$ensembl <- gsub("(?<=\\()[^()]*(?=\\))(*SKIP)(*F)|.", "", ukb_evenin
 ukb_more_morning$ensembl <- gsub("(?<=\\()[^()]*(?=\\))(*SKIP)(*F)|.", "", ukb_more_morning$Name, perl=T)
 ukb_more_evening$ensembl <- gsub("(?<=\\()[^()]*(?=\\))(*SKIP)(*F)|.", "", ukb_more_evening$Name, perl=T)
 
+#
+
 # ├── perform meta-analysis
 # using material from https://www.mv.helsinki.fi/home/mjxpirin/GWAS_course/material/GWAS9.html
 
+# can make a prediction using just the beta and standard error?
+meta.F <- function(b.est, se){
+  #returns inverse-variance weighted meta-analysis estimate, SE and P-value.
+  b.F = sum(b.est / se^2) / sum(1 / se^2)
+  se.F = 1 / sqrt(sum(1 / se^2))
+  p.F = pchisq( (b.F / se.F)^2, df = 1, lower = F)
+  return(list(b.F = b.F, se.F = se.F, p.F = p.F))
+}
+
+b.est = log(c(ukb_morning$odds_ratio, ukb_more_morning$odds_ratio)) #beta is logOR for case-control data
+b.est
+ci = log(matrix(c(ukb_morning$ci_lower, ukb_morning$ci_upper,
+                  ukb_more_morning$ci_lower, ukb_more_morning$ci_upper), byrow = T, ncol = 2))
+se = (ci[,2] - ci[,1])/(2*1.96) #length of 95%CI is 2*1.96*SE
+meta.res = meta.F(b.est, se)
+meta.res
 
